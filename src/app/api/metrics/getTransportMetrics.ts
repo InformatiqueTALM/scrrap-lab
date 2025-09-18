@@ -46,9 +46,9 @@ const getTransportMetrics = async (
           $sum: {
             $multiply: [
               "$distance",
-              // base unit is in kg
+              // base unit is in g, we want tons
               {
-                $divide: ["$weight", 1000],
+                $divide: ["$weight", 1000000],
               },
             ],
           },
