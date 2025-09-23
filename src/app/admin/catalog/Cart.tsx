@@ -2,6 +2,7 @@ import styled from "@emotion/styled";
 import { LoadingButton } from "@mui/lab";
 import { Button, Card, CardContent } from "@mui/material";
 import { useCreate, useNotify, useRefresh, useStore } from "react-admin";
+import { useCallback, useMemo } from "react";
 import { CartItem } from "../entries/CartItem";
 import CartLine from "./CartLine";
 import ShoppingCart from "../ui/ShoppingCart";
@@ -14,14 +15,18 @@ const Cart = () => {
   const [cart, setCart] = useStore<CartItem[]>("cart", []);
   const refresh = useRefresh();
   const notify = useNotify();
+  
+  // Memoize create data to prevent useCreate from recreating on every render
+  const createData = useMemo(() => ({
+    data: {
+      date: new Date(),
+      offcuts: cart,
+    },
+  }), [cart]);
+  
   const [create, { isLoading, error }] = useCreate(
     "exits",
-    {
-      data: {
-        date: new Date(),
-        offcuts: cart,
-      },
-    },
+    createData,
     {
       onSuccess: () => {
         notify(`Enregistrement réussi`, { type: "success" });
@@ -50,15 +55,13 @@ const Cart = () => {
     });
   };
 
-  const handleLineRemovedClicked = (id: string) => () => {
-    setCart(cart.filter((item) => item.offcut.id !== id));
-  };
+  const handleLineRemovedClicked = useCallback((id: string) => () => {
+    setCart(prevCart => prevCart.filter((item) => item.offcut.id !== id));
+  }, [setCart]);
 
-  const handleLineQuantityChanged = (id: string) => (quantity: number) => {
-    setCart(
-      cart.map((item) => (item.offcut.id === id ? { ...item, quantity } : item))
-    );
-  };
+  const handleLineQuantityChanged = useCallback((id: string) => (quantity: number) => {
+    setCart(prevCart => prevCart.map((item) => (item.offcut.id === id ? { ...item, quantity } : item)));
+  }, [setCart]);
 
   return (
     <Card
